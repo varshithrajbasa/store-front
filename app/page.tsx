@@ -1,69 +1,99 @@
-import Image from "next/image";
+import Link from "next/link";
+import ProductCard from "@/components/ProductCard";
+import { getFeaturedProducts, getAllCategories } from "@/lib/api";
 
-export default function Home() {
+export default async function HomePage() {
+  const [featuredProducts, categories] = await Promise.all([
+    getFeaturedProducts(4),
+    getAllCategories(),
+  ]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div className="space-y-16 pb-16">
+      {/* 1. Hero Section */}
+      <section className="bg-neutral-900 text-white py-20 px-4 text-center">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <span className="text-xs uppercase tracking-widest text-blue-400 font-semibold">
+            Spring Collection 2026
+          </span>
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight">
+            Minimalist Design, Maximum Impact.
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-neutral-400 text-base sm:text-lg">
+            Discover curated apparel, fine jewelery, and everyday tech essentials.
           </p>
+          <div className="pt-2">
+            <Link
+              href="/products"
+              className="inline-block bg-blue-600 hover:bg-blue-500 text-white font-medium px-8 py-3 rounded-full transition duration-200 shadow-sm"
+            >
+              Explore Full Catalog →
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      {/* 2. Category Cards Section (Updated Styling) */}
+      <section className="max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold tracking-tight text-neutral-900">Shop by Category</h2>
+          <Link href="/products" className="text-sm font-medium text-blue-600 hover:underline">
+            View all products →
+          </Link>
         </div>
-      </main>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {categories.map((category) => (
+            <Link
+              key={category}
+              href={`/category/${encodeURIComponent(category)}`}
+              className="group p-6 rounded-2xl border border-neutral-200 bg-neutral-50/60 hover:bg-white hover:border-neutral-300 hover:shadow-md transition-all duration-200 text-center flex flex-col items-center justify-center min-h-[110px]"
+            >
+              <span className="capitalize font-semibold text-neutral-800 group-hover:text-blue-600 transition-colors text-sm sm:text-base">
+                {category}
+              </span>
+              <span className="text-xs text-neutral-400 mt-1">Explore items →</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* 3. Featured Products */}
+      <section className="max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight text-neutral-900">Trending Items</h2>
+            <p className="text-sm text-neutral-500">Popular picks selected for you</p>
+          </div>
+          <Link href="/products" className="text-sm font-medium text-blue-600 hover:underline">
+            See all →
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+          {featuredProducts.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      </section>
+
+      {/* 4. Value Highlights */}
+      <section className="max-w-7xl mx-auto px-4 border-t border-neutral-100 pt-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+          <div className="p-4 rounded-xl bg-neutral-50 space-y-2">
+            <h3 className="font-bold text-neutral-900">Fast & Free Delivery</h3>
+            <p className="text-xs text-neutral-500">Free shipping on all eligible orders worldwide.</p>
+          </div>
+          <div className="p-4 rounded-xl bg-neutral-50 space-y-2">
+            <h3 className="font-bold text-neutral-900">30-Day Money-Back</h3>
+            <p className="text-xs text-neutral-500">Simple return policy with zero hassle guaranteed.</p>
+          </div>
+          <div className="p-4 rounded-xl bg-neutral-50 space-y-2">
+            <h3 className="font-bold text-neutral-900">24/7 Dedicated Support</h3>
+            <p className="text-xs text-neutral-500">Instant answers and friendly support anytime.</p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
