@@ -2,6 +2,9 @@ import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 import { getFeaturedProducts, getAllCategories } from "@/lib/api";
 
+// Ensures this page runs at runtime on the server (SSR) instead of build time (SSG)
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const [featuredProducts, categories] = await Promise.all([
     getFeaturedProducts(4),
@@ -10,7 +13,7 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-16 pb-16">
-      {/* 1. Hero Section */}
+      {/* Hero Section */}
       <section className="bg-neutral-900 text-white py-20 px-4 text-center">
         <div className="max-w-3xl mx-auto space-y-6">
           <span className="text-xs uppercase tracking-widest text-blue-400 font-semibold">
@@ -25,7 +28,7 @@ export default async function HomePage() {
           <div className="pt-2">
             <Link
               href="/products"
-              className="inline-block bg-blue-600 hover:bg-blue-500 text-white font-medium px-8 py-3 rounded-full transition duration-200 shadow-sm"
+              className="inline-block bg-blue-600 hover:bg-blue-500 text-white font-medium px-8 py-3 rounded-full transition duration-200"
             >
               Explore Full Catalog →
             </Link>
@@ -33,12 +36,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 2. Category Cards Section (Updated Styling) */}
+      {/* Categories Grid */}
       <section className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold tracking-tight text-neutral-900">Shop by Category</h2>
-          <Link href="/products" className="text-sm font-medium text-blue-600 hover:underline">
-            View all products →
+          <Link href="/categories" className="text-sm font-medium text-blue-600 hover:underline">
+            View all categories →
           </Link>
         </div>
 
@@ -47,9 +50,9 @@ export default async function HomePage() {
             <Link
               key={category}
               href={`/category/${encodeURIComponent(category)}`}
-              className="group p-6 rounded-2xl border border-neutral-200 bg-neutral-50/60 hover:bg-white hover:border-neutral-300 hover:shadow-md transition-all duration-200 text-center flex flex-col items-center justify-center min-h-[110px]"
+              className="group p-6 rounded-2xl border border-neutral-200 bg-neutral-50 hover:bg-white hover:border-neutral-300 hover:shadow-md transition-all duration-200 text-center flex flex-col items-center justify-center min-h-[110px]"
             >
-              <span className="capitalize font-semibold text-neutral-800 group-hover:text-blue-600 transition-colors text-sm sm:text-base">
+              <span className="capitalize font-semibold text-neutral-800 group-hover:text-blue-600 transition-colors">
                 {category}
               </span>
               <span className="text-xs text-neutral-400 mt-1">Explore items →</span>
@@ -58,41 +61,26 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 3. Featured Products */}
+      {/* Featured Products */}
       <section className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight text-neutral-900">Trending Items</h2>
-            <p className="text-sm text-neutral-500">Popular picks selected for you</p>
-          </div>
+          <h2 className="text-2xl font-bold tracking-tight text-neutral-900">Trending Items</h2>
           <Link href="/products" className="text-sm font-medium text-blue-600 hover:underline">
             See all →
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-          {featuredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </section>
-
-      {/* 4. Value Highlights */}
-      <section className="max-w-7xl mx-auto px-4 border-t border-neutral-100 pt-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-          <div className="p-4 rounded-xl bg-neutral-50 space-y-2">
-            <h3 className="font-bold text-neutral-900">Fast & Free Delivery</h3>
-            <p className="text-xs text-neutral-500">Free shipping on all eligible orders worldwide.</p>
+        {featuredProducts.length === 0 ? (
+          <div className="text-center py-12 border border-dashed rounded-2xl">
+            <p className="text-neutral-500 text-sm">No featured products found.</p>
           </div>
-          <div className="p-4 rounded-xl bg-neutral-50 space-y-2">
-            <h3 className="font-bold text-neutral-900">30-Day Money-Back</h3>
-            <p className="text-xs text-neutral-500">Simple return policy with zero hassle guaranteed.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            {featuredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
           </div>
-          <div className="p-4 rounded-xl bg-neutral-50 space-y-2">
-            <h3 className="font-bold text-neutral-900">24/7 Dedicated Support</h3>
-            <p className="text-xs text-neutral-500">Instant answers and friendly support anytime.</p>
-          </div>
-        </div>
+        )}
       </section>
     </div>
   );

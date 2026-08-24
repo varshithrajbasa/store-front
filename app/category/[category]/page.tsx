@@ -1,36 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Metadata } from "next";
 import ProductCard from "@/components/ProductCard";
-import { getAllCategories, getProductsByCategory } from "@/lib/api";
+import { getProductsByCategory } from "@/lib/api";
 
-export const dynamicParams = true; // Allows dynamic runtime fallback
+export const dynamic = "force-dynamic";
 
 interface CategoryPageProps {
   params: Promise<{ category: string }>;
 }
 
-export async function generateStaticParams() {
-  const categories = await getAllCategories();
-  return categories.map((cat) => ({
-    category: encodeURIComponent(cat),
-  }));
-}
-
-export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
-  const { category } = await params;
-  const decodedCategory = decodeURIComponent(category);
-
-  return {
-    title: `${decodedCategory.toUpperCase()} | NextStore`,
-    description: `Shop the latest in ${decodedCategory} at NextStore.`,
-  };
-}
-
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { category } = await params;
   const decodedCategory = decodeURIComponent(category);
-
   const products = await getProductsByCategory(decodedCategory);
 
   if (!products || products.length === 0) {
@@ -43,12 +24,12 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         <nav className="flex items-center gap-2 text-xs text-neutral-500 mb-3 capitalize">
           <Link href="/" className="hover:text-black transition">Home</Link>
           <span>/</span>
-          <Link href="/products" className="hover:text-black transition">Categories</Link>
+          <Link href="/categories" className="hover:text-black transition">Categories</Link>
           <span>/</span>
           <span className="text-neutral-900 font-medium">{decodedCategory}</span>
         </nav>
 
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+        <div className="flex items-baseline justify-between">
           <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 capitalize">
             {decodedCategory}
           </h1>
