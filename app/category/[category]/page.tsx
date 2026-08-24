@@ -4,11 +4,12 @@ import type { Metadata } from "next";
 import ProductCard from "@/components/ProductCard";
 import { getAllCategories, getProductsByCategory } from "@/lib/api";
 
+export const dynamicParams = true; // Allows dynamic runtime fallback
+
 interface CategoryPageProps {
   params: Promise<{ category: string }>;
 }
 
-// 1. Static Site Generation for all categories
 export async function generateStaticParams() {
   const categories = await getAllCategories();
   return categories.map((cat) => ({
@@ -16,7 +17,6 @@ export async function generateStaticParams() {
   }));
 }
 
-// 2. Dynamic SEO Metadata
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { category } = await params;
   const decodedCategory = decodeURIComponent(category);
@@ -27,17 +27,11 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   };
 }
 
-// 3. Category Page Component
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { category } = await params;
   const decodedCategory = decodeURIComponent(category);
 
-  let products = [];
-  try {
-    products = await getProductsByCategory(decodedCategory);
-  } catch {
-    notFound();
-  }
+  const products = await getProductsByCategory(decodedCategory);
 
   if (!products || products.length === 0) {
     notFound();
@@ -45,7 +39,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
   return (
     <main className="max-w-7xl mx-auto px-4 py-10 space-y-8">
-      {/* Breadcrumbs & Header */}
       <div className="border-b border-neutral-200 pb-6">
         <nav className="flex items-center gap-2 text-xs text-neutral-500 mb-3 capitalize">
           <Link href="/" className="hover:text-black transition">Home</Link>
@@ -65,7 +58,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         </div>
       </div>
 
-      {/* Products Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />

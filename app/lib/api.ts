@@ -2,67 +2,88 @@ import { Product } from "@/types/product";
 
 const BASE_URL = "https://fakestoreapi.com";
 
-// Fetch all products
-export async function getAllProducts(): Promise<Product[]> {
-  const res = await fetch(`${BASE_URL}/products`, {
-    next: { revalidate: 3600 }, // Cache and revalidate hourly
-  });
+const FALLBACK_CATEGORIES = [
+  "electronics",
+  "jewelery",
+  "men's clothing",
+  "women's clothing",
+];
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch products");
+// Fetch all categories with fallback
+export async function getAllCategories(): Promise<string[]> {
+  try {
+    const res = await fetch(`${BASE_URL}/products/categories`, {
+      next: { revalidate: 86400 },
+    });
+
+    if (!res.ok) {
+      console.warn("Categories fetch returned non-200, using fallback");
+      return FALLBACK_CATEGORIES;
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.warn("Failed to reach Fake Store API during build, using fallback categories:", error);
+    return FALLBACK_CATEGORIES;
   }
-
-  return res.json();
 }
 
-// Fetch featured/limited products
-export async function getFeaturedProducts(limit: number = 4): Promise<Product[]> {
-  const res = await fetch(`${BASE_URL}/products?limit=${limit}`, {
-    next: { revalidate: 3600 },
-  });
+// Fetch all products with safe error handling
+export async function getAllProducts(): Promise<Product[]> {
+  try {
+    const res = await fetch(`${BASE_URL}/products`, {
+      next: { revalidate: 3600 },
+    });
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch featured products");
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (error) {
+    console.warn("Failed to fetch products:", error);
+    return [];
   }
+}
 
-  return res.json();
+// Fetch featured products
+export async function getFeaturedProducts(limit: number = 4): Promise<Product[]> {
+  try {
+    const res = await fetch(`${BASE_URL}/products?limit=${limit}`, {
+      next: { revalidate: 3600 },
+    });
+
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (error) {
+    console.warn("Failed to fetch featured products:", error);
+    return [];
+  }
 }
 
 // Fetch single product by ID
 export async function getProductById(id: string | number): Promise<Product | null> {
-  const res = await fetch(`${BASE_URL}/products/${id}`, {
-    next: { revalidate: 3600 },
-  });
+  try {
+    const res = await fetch(`${BASE_URL}/products/${id}`, {
+      next: { revalidate: 3600 },
+    });
 
-  if (!res.ok) {
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (error) {
+    console.warn(`Failed to fetch product ${id}:`, error);
     return null;
   }
-
-  return res.json();
 }
 
-// Fetch all category names
-export async function getAllCategories(): Promise<string[]> {
-  const res = await fetch(`${BASE_URL}/products/categories`, {
-    next: { revalidate: 86400 }, // Revalidate daily
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch categories");
-  }
-
-  return res.json();
-}
-
-// Fetch products by specific category
+// Fetch products by category
 export async function getProductsByCategory(category: string): Promise<Product[]> {
-  const res = await fetch(`${BASE_URL}/products/category/${encodeURIComponent(category)}`, {
-    next: { revalidate: 3600 },
-  });
+  try {
+    const res = await fetch(`${BASE_URL}/products/category/${encodeURIComponent(category)}`, {
+      next: { revalidate: 3600 },
+    });
 
-  if (!res.ok) {
-    throw new Error(`Failed to fetch products for category: ${category}`);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (error) {
+    console.warn(`Failed to fetch category ${category}:`, error);
+    return [];
   }
-
-  return res.json();
 }
