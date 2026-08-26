@@ -16,7 +16,7 @@ export default function CartPage() {
           </svg>
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-neutral-900 mb-2">Your cart is empty</h1>
-        <p className="text-neutral-500 mb-8">Looks like you haven't added any items yet.</p>
+        <p className="text-neutral-500 mb-8">Looks like you haven&apos;t added any items yet.</p>
         <Link
           href="/products"
           className="inline-block bg-neutral-900 hover:bg-neutral-800 text-white font-medium px-6 py-3 rounded-xl transition"
@@ -110,12 +110,13 @@ export default function CartPage() {
             <span>${totalPrice.toFixed(2)}</span>
           </div>
 
-          <button
-            onClick={() => alert("Proceeding to checkout with total: $" + totalPrice.toFixed(2))}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3.5 rounded-xl transition shadow-sm"
+          <Link
+            href="/checkout"
+            id="cart-checkout-btn"
+            className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3.5 rounded-xl transition shadow-sm text-center block text-sm"
           >
-            Checkout
-          </button>
+            Proceed to Checkout
+          </Link>
         </div>
       </div>
     </main>

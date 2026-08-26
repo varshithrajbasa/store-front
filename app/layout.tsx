@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Inter } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Footer from "./components/layout/Footer";
 import Navbar from "./components/layout/Navbar";
 import { CartProvider } from "./context/CartContext";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { AuthProvider } from "./context/AuthContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,11 +22,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body
         className={`${inter.className} min-h-screen flex flex-col antialiased bg-white text-neutral-900`}
       >
-        <CartProvider>
-          <Navbar />
-          <div className="flex-1">{children}</div>
-          <Footer />
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <Navbar />
+            <div className="flex-1">{children}</div>
+            <Footer />
+          </CartProvider>
+        </AuthProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

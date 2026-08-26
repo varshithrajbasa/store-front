@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
+import { hashPassword } from "@/lib/auth";
+import { User } from "@/types/user";
 
 const INITIAL_PRODUCTS = [
   {
@@ -249,14 +251,34 @@ export async function GET() {
     const client = await clientPromise;
     const db = client.db(process.env.MONGODB_DB || "nextstore_db");
     const collection = db.collection("products");
+    const usersCollection = db.collection<User>("users");
 
-    // Clear existing and insert
+    // Clear existing products and insert
     await collection.deleteMany({});
     await collection.insertMany(INITIAL_PRODUCTS);
 
+    // Ensure default admin user exists
+    const adminEmail = "admin@nextstore.com";
+    const existingAdmin = await usersCollection.findOne({ email: adminEmail });
+    if (!existingAdmin) {
+      const password_hash = await hashPassword("Admin@123456");
+      await usersCollection.insertOne({
+        name: "Store Administrator",
+        email: adminEmail,
+        password_hash,
+        role: "admin",
+        createdAt: new Date(),
+      } as User);
+    } else if (existingAdmin.role !== "admin") {
+      await usersCollection.updateOne(
+        { email: adminEmail },
+        { $set: { role: "admin" } }
+      );
+    }
+
     return NextResponse.json({
       success: true,
-      message: `Seeded ${INITIAL_PRODUCTS.length} products to MongoDB successfully!`,
+      message: `Seeded ${INITIAL_PRODUCTS.length} products and configured default Admin (admin@nextstore.com) successfully!`,
     });
   } catch (error) {
     return NextResponse.json(

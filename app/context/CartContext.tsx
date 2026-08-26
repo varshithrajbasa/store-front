@@ -20,33 +20,28 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  // Load cart from localStorage on initial render
-  useEffect(() => {
-    try {
-      const savedCart = localStorage.getItem("nextstore_cart");
-      if (savedCart) {
-        setCart(JSON.parse(savedCart));
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const savedCart = localStorage.getItem("nextstore_cart");
+        if (savedCart) {
+          return JSON.parse(savedCart);
+        }
+      } catch (error) {
+        console.error("Failed to load cart from localStorage", error);
       }
-    } catch (error) {
-      console.error("Failed to load cart from localStorage", error);
-    } finally {
-      setIsLoaded(true);
     }
-  }, []);
+    return [];
+  });
 
   // Save cart to localStorage whenever it changes
   useEffect(() => {
-    if (isLoaded) {
-      try {
-        localStorage.setItem("nextstore_cart", JSON.stringify(cart));
-      } catch (error) {
-        console.error("Failed to save cart to localStorage", error);
-      }
+    try {
+      localStorage.setItem("nextstore_cart", JSON.stringify(cart));
+    } catch (error) {
+      console.error("Failed to save cart to localStorage", error);
     }
-  }, [cart, isLoaded]);
+  }, [cart]);
 
   const addToCart = (product: Product, quantity: number = 1) => {
     setCart((prevCart) => {
