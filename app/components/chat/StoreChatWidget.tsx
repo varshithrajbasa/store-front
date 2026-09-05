@@ -44,17 +44,21 @@ export default function StoreChatWidget() {
           if (Array.isArray(data.orders)) {
             setRecentOrders(data.orders);
           }
-          const welcome =
-            data.welcomeMessage ||
-            "Hello! I am your NextStore shopping assistant. You can check your recent orders, track delivery status, or manage your account.";
-          setMessages([
-            {
-              id: "msg-init",
-              role: "assistant",
-              content: welcome,
-              timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            },
-          ]);
+          if (Array.isArray(data.messages) && data.messages.length > 0) {
+            setMessages(data.messages);
+          } else {
+            const welcome =
+              data.welcomeMessage ||
+              "Hello! I am your NextStore shopping assistant. You can check your recent orders, track delivery status, or manage your account.";
+            setMessages([
+              {
+                id: "msg-init",
+                role: "assistant",
+                content: welcome,
+                timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              },
+            ]);
+          }
         }
       } catch (err) {
         console.error("Failed to initialize chat:", err);
@@ -62,6 +66,25 @@ export default function StoreChatWidget() {
     }
     initChat();
   }, [user]);
+
+  // Clear chat conversation in MongoDB and reset local state
+  const handleResetChat = async () => {
+    setSelectedOrder(null);
+    try {
+      await fetch("/api/chat", { method: "DELETE" });
+    } catch (err) {
+      console.error("Failed to clear chat history:", err);
+    }
+    setMessages([
+      {
+        id: `reset-${Date.now()}`,
+        role: "assistant",
+        content:
+          "Hello! Chat history cleared. How can I help you today with your orders, store products, or account settings?",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      },
+    ]);
+  };
 
   // Send message to backend
   const handleSendMessage = async (textToSend?: string, specificOrderId?: string) => {
@@ -311,20 +334,8 @@ export default function StoreChatWidget() {
 
             <div className="flex items-center gap-1">
               <button
-                onClick={() => {
-                  setSelectedOrder(null);
-                  setMessages((prev) => [
-                    ...prev,
-                    {
-                      id: `reset-${Date.now()}`,
-                      role: "assistant",
-                      content:
-                        "Hello again! How can I help you today with your orders, store products, or account settings?",
-                      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-                    },
-                  ]);
-                }}
-                title="Reset View & Deselect Order"
+                onClick={handleResetChat}
+                title="Reset Chat History & Deselect Order"
                 className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -345,15 +356,27 @@ export default function StoreChatWidget() {
 
           {/* Quick Action Shortcuts Bar */}
           <div className="bg-neutral-50 px-3 py-2 border-b border-neutral-200 flex items-center gap-1.5 overflow-x-auto text-xs scrollbar-none flex-shrink-0">
-            <button
-              onClick={() => {
-                setSelectedOrder(null);
-                handleSendMessage("Show my recent orders");
-              }}
-              className="px-2.5 py-1 bg-white hover:bg-neutral-100 border border-neutral-300 rounded-full font-medium text-neutral-700 whitespace-nowrap shadow-xs transition"
-            >
-              📦 My Recent Orders
-            </button>
+            {user ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedOrder(null);
+                  handleSendMessage("Show my recent orders");
+                }}
+                className="px-2.5 py-1 bg-white hover:bg-neutral-100 border border-neutral-300 rounded-full font-medium text-neutral-700 whitespace-nowrap shadow-xs transition"
+              >
+                📦 My Recent Orders
+              </button>
+            ) : (
+              <Link
+                href="/orders"
+                onClick={() => setIsOpen(false)}
+                className="px-2.5 py-1 bg-white hover:bg-neutral-100 border border-neutral-300 rounded-full font-medium text-neutral-700 whitespace-nowrap shadow-xs transition"
+              >
+                📦 My Recent Orders
+              </Link>
+            )}
+
             <Link
               href="/profile"
               onClick={() => setIsOpen(false)}
@@ -361,15 +384,27 @@ export default function StoreChatWidget() {
             >
               🔑 Manage Profile / Password
             </Link>
-            <button
-              onClick={() => {
-                setSelectedOrder(null);
-                handleSendMessage("What are the latest products and updates in the store?");
-              }}
-              className="px-2.5 py-1 bg-white hover:bg-neutral-100 border border-neutral-300 rounded-full font-medium text-neutral-700 whitespace-nowrap shadow-xs transition"
-            >
-              🛍️ Store Products
-            </button>
+
+            {user ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedOrder(null);
+                  handleSendMessage("What are the latest products and updates in the store?");
+                }}
+                className="px-2.5 py-1 bg-white hover:bg-neutral-100 border border-neutral-300 rounded-full font-medium text-neutral-700 whitespace-nowrap shadow-xs transition"
+              >
+                🛍️ Store Products
+              </button>
+            ) : (
+              <Link
+                href="/products"
+                onClick={() => setIsOpen(false)}
+                className="px-2.5 py-1 bg-white hover:bg-neutral-100 border border-neutral-300 rounded-full font-medium text-neutral-700 whitespace-nowrap shadow-xs transition"
+              >
+                🛍️ Store Products
+              </Link>
+            )}
           </div>
 
           {/* Messages & Interactive Area */}
@@ -436,6 +471,35 @@ export default function StoreChatWidget() {
                 <span className="text-[10px] text-neutral-400 mt-1 px-1">{m.timestamp}</span>
               </div>
             ))}
+
+            {/* Guest State when user is not logged in */}
+            {!user && (
+              <div className="my-2 bg-white rounded-xl border border-neutral-200 p-3.5 text-center shadow-xs">
+                <div className="w-8 h-8 rounded-full bg-neutral-100 text-neutral-800 flex items-center justify-center mx-auto mb-1.5 text-sm">
+                  👋
+                </div>
+                <div className="text-xs font-semibold text-neutral-900">Welcome, Guest Shopper!</div>
+                <p className="text-[11px] text-neutral-500 mt-1 mb-2.5 max-w-[260px] mx-auto">
+                  Log in to track your past purchases, view order details, or manage your account.
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <Link
+                    href="/login?redirect=/orders"
+                    onClick={() => setIsOpen(false)}
+                    className="px-3 py-1.5 bg-neutral-900 hover:bg-black text-white text-xs font-medium rounded-lg transition shadow-xs"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/products"
+                    onClick={() => setIsOpen(false)}
+                    className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-medium rounded-lg transition"
+                  >
+                    Browse Catalog
+                  </Link>
+                </div>
+              </div>
+            )}
 
             {/* Empty Orders State when user has 0 orders */}
             {recentOrders.length === 0 && user && (

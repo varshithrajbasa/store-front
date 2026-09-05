@@ -33,5 +33,15 @@ export interface ChatApiResponse {
   reply?: string;
   welcomeMessage?: string;
   orders: ChatOrderSummary[];
+  messages?: ChatMessage[];
   error?: string;
+}
+
+export interface ChatConversation {
+  _id?: string;
+  userId: string;
+  userEmail: string;
+  messages: ChatMessage[];
+  createdAt: Date;
+  updatedAt: Date;
 }

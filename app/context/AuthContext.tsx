@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { UserSafe } from "@/types/user";
 
 interface AuthContextType {
@@ -17,7 +16,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const [user, setUser] = useState<UserSafe | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -116,8 +114,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Logout error:", err);
     } finally {
       setUser(null);
-      router.push("/");
-      router.refresh();
+      if (typeof window !== "undefined") {
+        window.location.reload();
+      }
     }
   };
 

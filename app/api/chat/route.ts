@@ -3,7 +3,7 @@ import clientPromise from "@/lib/mongodb";
 import { verifyJWT, AUTH_COOKIE_NAME } from "@/lib/auth";
 import { Order } from "@/types/order";
 import { Product } from "@/types/product";
-import { ChatOrderSummary } from "@/types/chat";
+import { ChatOrderSummary, ChatMessage } from "@/types/chat";
 import { GoogleGenAI } from "@google/genai";
 
 const DB_NAME = process.env.MONGODB_DB || "nextstore_db";
@@ -63,6 +63,61 @@ function isDisallowedCodeRequest(text: string): boolean {
 }
 
 /**
+ * Persist conversation turns to MongoDB chat_conversations
+ */
+async function saveConversationTurn(
+  db: any,
+  userId: string,
+  userEmail: string,
+  userMessage: string,
+  reply: string
+) {
+  try {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    const userMsgObj: ChatMessage = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      content: userMessage,
+      timestamp: timeStr,
+    };
+
+    const asstMsgObj: ChatMessage = {
+      id: `asst-${Date.now() + 1}`,
+      role: "assistant",
+      content: reply,
+      timestamp: timeStr,
+    };
+
+    await db.collection("chat_conversations").updateOne(
+      {
+        $or: [{ userId }, { userEmail }],
+      },
+      {
+        $set: {
+          userId,
+          userEmail,
+          updatedAt: now,
+        },
+        $setOnInsert: {
+          createdAt: now,
+        },
+        $push: {
+          messages: {
+            $each: [userMsgObj, asstMsgObj],
+            $slice: -60, // Maintain the last 60 messages to optimize storage
+          },
+        },
+      },
+      { upsert: true }
+    );
+  } catch (err) {
+    console.error("Failed to persist message to chat_conversations:", err);
+  }
+}
+
+/**
  * Fallback generator when API is unreachable or before API key is provided
  */
 function generateSmartFallbackReply(
@@ -107,14 +162,14 @@ function generateSmartFallbackReply(
   }
 
   if (lower.includes("password") || lower.includes("profile") || lower.includes("address")) {
-    return "You can update your personal profile, shipping address, or change your password anytime by visiting your Profile settings at /profile.";
+    return "You can update your personal profile, shipping address, or change your password anytime by visiting your [Profile Settings](/profile).";
   }
 
   if (lower.includes("product") || lower.includes("catalog") || lower.includes("update")) {
     const productNames = products.map((p) => p.title).slice(0, 3).join(", ");
     return productNames
-      ? `Here are some of our latest products: ${productNames}. You can browse the full catalog anytime on our Products page!`
-      : "You can discover our entire catalog and latest deals anytime on our Products page!";
+      ? `Here are some of our latest products: ${productNames}. You can browse our full [Store Catalog](/products) anytime!`
+      : "You can discover our entire catalog and latest deals anytime on our [Store Products](/products) page!";
   }
 
   return "I am your NextStore assistant! I can help you check your orders, inspect order status, assist with order cancellations, or direct you to update your profile and password.";
@@ -122,7 +177,8 @@ function generateSmartFallbackReply(
 
 /**
  * GET /api/chat
- * Fetch initial user session state, welcome greeting, and recent 3 orders.
+ * Fetch initial user session state, welcome greeting, 3 recent orders,
+ * and persisted chat history from chat_conversations collection.
  */
 export async function GET(request: NextRequest) {
   try {
@@ -134,6 +190,7 @@ export async function GET(request: NextRequest) {
         welcomeMessage:
           "Welcome to NextStore! Sign in to view and manage your recent orders, track shipments, or get help with your account profile.",
         orders: [],
+        messages: [],
       });
     }
 
@@ -145,6 +202,7 @@ export async function GET(request: NextRequest) {
         welcomeMessage:
           "Welcome to NextStore! Sign in to view and manage your recent orders, track shipments, or get help with your account profile.",
         orders: [],
+        messages: [],
       });
     }
 
@@ -162,6 +220,11 @@ export async function GET(request: NextRequest) {
 
     const formattedOrders = orders.map(formatOrderForChat);
 
+    // Retrieve saved chat history from chat_conversations collection
+    const chatDoc = await db.collection("chat_conversations").findOne({
+      $or: [{ userId: payload.id }, { userEmail: payload.email }],
+    });
+
     const welcomeMessage =
       formattedOrders.length > 0
         ? `Hello ${payload.name}! I'm your NextStore Shopping Assistant. You can inspect your ${formattedOrders.length} recent order(s) below, track shipments, request cancellations, or ask about our latest products and profile settings.`
@@ -176,6 +239,7 @@ export async function GET(request: NextRequest) {
       },
       welcomeMessage,
       orders: formattedOrders,
+      messages: chatDoc?.messages || [],
     });
   } catch (error) {
     console.error("GET /api/chat error:", error);
@@ -189,6 +253,7 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/chat
  * Handle conversational queries with Gemini and strict guardrails.
+ * Automatically persists user query & assistant response into chat_conversations collection.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -270,11 +335,17 @@ export async function POST(request: NextRequest) {
         sampleProducts
       );
 
+      const finalFallback = `${fallbackReply}\n\n*(Note: Add GEMINI_API_KEY to your .env.local to enable real-time Gemini AI generation)*`;
+
+      if (isAuthenticated && payload?.id) {
+        await saveConversationTurn(db, payload.id, payload.email, userMessage, finalFallback);
+      }
+
       return NextResponse.json({
         success: true,
         authenticated: isAuthenticated,
         user: isAuthenticated ? { name: payload.name, email: payload.email } : undefined,
-        reply: `${fallbackReply}\n\n*(Note: Add GEMINI_API_KEY to your .env.local to enable real-time Gemini AI generation)*`,
+        reply: finalFallback,
         orders: formattedOrders,
       });
     }
@@ -365,6 +436,11 @@ ${JSON.stringify(sampleProducts, null, 2)}
         reply = STRICT_REFUSAL_MESSAGE;
       }
 
+      // Persist conversation turn to MongoDB chat_conversations collection
+      if (isAuthenticated && payload?.id) {
+        await saveConversationTurn(db, payload.id, payload.email, userMessage, reply);
+      }
+
       return NextResponse.json({
         success: true,
         authenticated: isAuthenticated,
@@ -382,6 +458,10 @@ ${JSON.stringify(sampleProducts, null, 2)}
         sampleProducts
       );
 
+      if (isAuthenticated && payload?.id) {
+        await saveConversationTurn(db, payload.id, payload.email, userMessage, fallbackReply);
+      }
+
       return NextResponse.json({
         success: true,
         authenticated: isAuthenticated,
@@ -397,6 +477,48 @@ ${JSON.stringify(sampleProducts, null, 2)}
         success: false,
         error: (error as Error).message || "Failed to process chat message",
       },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/chat
+ * Clears the persisted chat conversation from chat_conversations collection.
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized: Please sign in" },
+        { status: 401 }
+      );
+    }
+
+    const payload = await verifyJWT(token);
+    if (!payload || !payload.id) {
+      return NextResponse.json(
+        { success: false, error: "Invalid session" },
+        { status: 401 }
+      );
+    }
+
+    const client = await clientPromise;
+    const db = client.db(DB_NAME);
+
+    await db.collection("chat_conversations").deleteOne({
+      $or: [{ userId: payload.id }, { userEmail: payload.email }],
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Chat history cleared successfully",
+    });
+  } catch (error) {
+    console.error("DELETE /api/chat error:", error);
+    return NextResponse.json(
+      { success: false, error: (error as Error).message || "Failed to clear chat history" },
       { status: 500 }
     );
   }
