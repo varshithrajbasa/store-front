@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Footer from "./components/layout/Footer";
 import Navbar from "./components/layout/Navbar";
+import StoreChatWidget from "./components/chat/StoreChatWidget";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Navbar />
             <div className="flex-1">{children}</div>
             <Footer />
+            <StoreChatWidget />
           </CartProvider>
         </AuthProvider>
         <Analytics />
