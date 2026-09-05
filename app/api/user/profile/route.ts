@@ -138,6 +138,17 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Restrict test role from modifying personal info or password
+    if (user.role === "test" || payload.role === "test") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Permission denied: The test user account is in read-only mode. Personal information and password changes are disabled.",
+        },
+        { status: 403 }
+      );
+    }
+
     const updateFields: Partial<User> = {
       updatedAt: new Date(),
     };

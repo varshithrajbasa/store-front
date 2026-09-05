@@ -83,6 +83,10 @@ export default function Navbar() {
             )}
           </div>
 
+          <Link href="/about" id="navbar-about-link" className="hover:text-black transition">
+            About
+          </Link>
+
           {/* Admin Direct Portal Link */}
           {user?.role === "admin" && (
             <Link
@@ -141,7 +145,7 @@ export default function Navbar() {
               >
                 <div
                   className={`w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center uppercase ${
-                    user.role === "admin" ? "bg-purple-600" : "bg-blue-600"
+                    user.role === "admin" ? "bg-purple-600" : user.role === "test" ? "bg-amber-600" : "bg-blue-600"
                   }`}
                 >
                   {user.name ? user.name.charAt(0) : "U"}
@@ -172,6 +176,8 @@ export default function Navbar() {
                       className={`inline-block mt-1 px-1.5 py-0.5 text-[10px] font-semibold uppercase rounded ${
                         user.role === "admin"
                           ? "bg-purple-100 text-purple-700 font-bold"
+                          : user.role === "test"
+                          ? "bg-amber-100 text-amber-800 font-bold border border-amber-200"
                           : "bg-neutral-100 text-neutral-600"
                       }`}
                     >

@@ -45,6 +45,8 @@ export default function ProfilePage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const isTestUser = profileData?.role === "test" || authUser?.role === "test";
+
   useEffect(() => {
     let active = true;
 
@@ -93,6 +95,11 @@ export default function ProfilePage() {
     setSuccessMessage(null);
     setErrorMessage(null);
 
+    if (isTestUser) {
+      setErrorMessage("The test user account is in read-only mode. Personal details cannot be modified.");
+      return;
+    }
+
     if (!name.trim() || name.trim().length < 2) {
       setErrorMessage("Please enter a valid full name (at least 2 characters).");
       return;
@@ -134,6 +141,11 @@ export default function ProfilePage() {
     e.preventDefault();
     setSuccessMessage(null);
     setErrorMessage(null);
+
+    if (isTestUser) {
+      setErrorMessage("The test user account is in read-only mode. Password changes are disabled.");
+      return;
+    }
 
     if (!currentPassword) {
       setErrorMessage("Please enter your current password.");
@@ -228,7 +240,13 @@ export default function ProfilePage() {
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
           <div className="flex items-center gap-4 sm:gap-5">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-blue-600 text-white text-2xl sm:text-3xl font-extrabold flex items-center justify-center shadow-lg border border-white/10 flex-shrink-0">
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl text-white text-2xl sm:text-3xl font-extrabold flex items-center justify-center shadow-lg border border-white/10 flex-shrink-0 ${
+              profileData?.role === "admin"
+                ? "bg-purple-600"
+                : isTestUser
+                ? "bg-amber-600"
+                : "bg-blue-600"
+            }`}>
               {userInitial}
             </div>
             <div>
@@ -236,8 +254,14 @@ export default function ProfilePage() {
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
                   {profileData?.name || authUser?.name}
                 </h1>
-                <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-md bg-blue-500/20 text-blue-300 border border-blue-400/30">
-                  {profileData?.role || "user"}
+                <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-md border ${
+                  profileData?.role === "admin"
+                    ? "bg-purple-500/20 text-purple-300 border-purple-400/30"
+                    : isTestUser
+                    ? "bg-amber-500/20 text-amber-300 border-amber-400/30"
+                    : "bg-blue-500/20 text-blue-300 border-blue-400/30"
+                }`}>
+                  {profileData?.role || (isTestUser ? "test" : "user")}
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-neutral-400 mt-1">{profileData?.email || authUser?.email}</p>
@@ -283,6 +307,23 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Test Account Read-Only Notice Banner */}
+      {isTestUser && (
+        <div className="mb-6 p-4.5 bg-amber-50 border border-amber-200 text-amber-900 text-sm rounded-2xl flex items-start gap-3.5 shadow-xs animate-in fade-in">
+          <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+              <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <span className="font-bold block text-sm text-amber-900">Test Account (Read-Only Mode)</span>
+            <span className="text-xs text-amber-800 leading-relaxed block mt-0.5">
+              You are signed in with the test demonstration account (<span className="font-mono font-semibold">role: test</span>). For integrity, personal details, delivery addresses, and password modification are restricted. You can still explore the catalog, add products to cart, and test simulated orders.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-neutral-200 mb-8 pb-1">
@@ -360,7 +401,9 @@ export default function ProfilePage() {
           <div>
             <h2 className="text-lg font-bold text-neutral-900">Personal Information</h2>
             <p className="text-xs text-neutral-500 mt-0.5">
-              Update your personal display name and default delivery address.
+              {isTestUser
+                ? "Information editing is locked for the test demo account."
+                : "Update your personal display name and default delivery address."}
             </p>
           </div>
 
@@ -373,10 +416,15 @@ export default function ProfilePage() {
                 type="text"
                 id="profile-name-input"
                 required
+                disabled={isTestUser || savingDetails}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your full name"
-                className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                className={`w-full px-3.5 py-2.5 rounded-xl text-sm border transition ${
+                  isTestUser
+                    ? "bg-neutral-100 border-neutral-200 text-neutral-500 cursor-not-allowed"
+                    : "bg-neutral-50 border-neutral-200 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                }`}
               />
             </div>
 
@@ -392,7 +440,7 @@ export default function ProfilePage() {
                   className="w-full px-3.5 py-2.5 bg-neutral-100 border border-neutral-200 rounded-xl text-sm text-neutral-500 cursor-not-allowed"
                 />
                 <span className="absolute right-3 top-2.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  Verified
+                  {isTestUser ? "Test Account" : "Verified"}
                 </span>
               </div>
             </div>
@@ -404,10 +452,15 @@ export default function ProfilePage() {
               <input
                 type="tel"
                 id="profile-phone-input"
+                disabled={isTestUser || savingDetails}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="+1 (555) 000-0000"
-                className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                className={`w-full px-3.5 py-2.5 rounded-xl text-sm border transition ${
+                  isTestUser
+                    ? "bg-neutral-100 border-neutral-200 text-neutral-500 cursor-not-allowed"
+                    : "bg-neutral-50 border-neutral-200 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                }`}
               />
             </div>
 
@@ -417,9 +470,14 @@ export default function ProfilePage() {
               </label>
               <select
                 id="profile-country-input"
+                disabled={isTestUser || savingDetails}
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                className={`w-full px-3.5 py-2.5 rounded-xl text-sm border transition ${
+                  isTestUser
+                    ? "bg-neutral-100 border-neutral-200 text-neutral-500 cursor-not-allowed"
+                    : "bg-neutral-50 border-neutral-200 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                }`}
               >
                 <option value="United States">United States</option>
                 <option value="Canada">Canada</option>
@@ -440,10 +498,15 @@ export default function ProfilePage() {
                   <input
                     type="text"
                     id="profile-address-input"
+                    disabled={isTestUser || savingDetails}
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="123 Main Street, Apt 4B"
-                    className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                    className={`w-full px-3.5 py-2.5 rounded-xl text-sm border transition ${
+                      isTestUser
+                        ? "bg-neutral-100 border-neutral-200 text-neutral-500 cursor-not-allowed"
+                        : "bg-neutral-50 border-neutral-200 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    }`}
                   />
                 </div>
 
@@ -455,10 +518,15 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       id="profile-city-input"
+                      disabled={isTestUser || savingDetails}
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       placeholder="New York"
-                      className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                      className={`w-full px-3.5 py-2.5 rounded-xl text-sm border transition ${
+                        isTestUser
+                          ? "bg-neutral-100 border-neutral-200 text-neutral-500 cursor-not-allowed"
+                          : "bg-neutral-50 border-neutral-200 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      }`}
                     />
                   </div>
 
@@ -469,10 +537,15 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       id="profile-postal-input"
+                      disabled={isTestUser || savingDetails}
                       value={postalCode}
                       onChange={(e) => setPostalCode(e.target.value)}
                       placeholder="10001"
-                      className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                      className={`w-full px-3.5 py-2.5 rounded-xl text-sm border transition ${
+                        isTestUser
+                          ? "bg-neutral-100 border-neutral-200 text-neutral-500 cursor-not-allowed"
+                          : "bg-neutral-50 border-neutral-200 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      }`}
                     />
                   </div>
                 </div>
@@ -483,9 +556,13 @@ export default function ProfilePage() {
           <div className="flex justify-end pt-4 border-t border-neutral-100">
             <button
               type="submit"
-              disabled={savingDetails}
+              disabled={savingDetails || isTestUser}
               id="save-profile-btn"
-              className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold rounded-xl transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-75"
+              className={`w-full sm:w-auto px-6 py-3 text-white text-sm font-semibold rounded-xl transition shadow-sm flex items-center justify-center gap-2 ${
+                isTestUser
+                  ? "bg-neutral-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-75"
+              }`}
             >
               {savingDetails ? (
                 <>
@@ -494,6 +571,13 @@ export default function ProfilePage() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   <span>Saving Changes...</span>
+                </>
+              ) : isTestUser ? (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                    <path fillRule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clipRule="evenodd" />
+                  </svg>
+                  <span>Editing Disabled for Test User</span>
                 </>
               ) : (
                 <span>Save Profile Changes</span>
@@ -509,7 +593,9 @@ export default function ProfilePage() {
           <div>
             <h2 className="text-lg font-bold text-neutral-900">Change Password</h2>
             <p className="text-xs text-neutral-500 mt-0.5">
-              Ensure your account is using a long, secure password.
+              {isTestUser
+                ? "Password modification is disabled for the demo test account."
+                : "Ensure your account is using a long, secure password."}
             </p>
           </div>
 
@@ -522,10 +608,15 @@ export default function ProfilePage() {
                 type="password"
                 id="current-password-input"
                 required
+                disabled={isTestUser || savingPassword}
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Enter current password"
-                className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                placeholder={isTestUser ? "••••••••" : "Enter current password"}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-sm border transition ${
+                  isTestUser
+                    ? "bg-neutral-100 border-neutral-200 text-neutral-500 cursor-not-allowed"
+                    : "bg-neutral-50 border-neutral-200 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                }`}
               />
             </div>
 
@@ -537,10 +628,15 @@ export default function ProfilePage() {
                 type="password"
                 id="new-password-input"
                 required
+                disabled={isTestUser || savingPassword}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
-                className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                placeholder={isTestUser ? "••••••••" : "Enter new password"}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-sm border transition ${
+                  isTestUser
+                    ? "bg-neutral-100 border-neutral-200 text-neutral-500 cursor-not-allowed"
+                    : "bg-neutral-50 border-neutral-200 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                }`}
               />
             </div>
 
@@ -552,10 +648,15 @@ export default function ProfilePage() {
                 type="password"
                 id="confirm-password-input"
                 required
+                disabled={isTestUser || savingPassword}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Re-type new password"
-                className="w-full px-3.5 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                placeholder={isTestUser ? "••••••••" : "Re-type new password"}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-sm border transition ${
+                  isTestUser
+                    ? "bg-neutral-100 border-neutral-200 text-neutral-500 cursor-not-allowed"
+                    : "bg-neutral-50 border-neutral-200 text-neutral-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                }`}
               />
             </div>
           </div>
@@ -563,9 +664,13 @@ export default function ProfilePage() {
           <div className="flex justify-start pt-4 border-t border-neutral-100">
             <button
               type="submit"
-              disabled={savingPassword}
+              disabled={savingPassword || isTestUser}
               id="change-password-btn"
-              className="w-full sm:w-auto px-6 py-3 bg-neutral-900 hover:bg-black active:bg-neutral-800 text-white text-sm font-semibold rounded-xl transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-75"
+              className={`w-full sm:w-auto px-6 py-3 text-white text-sm font-semibold rounded-xl transition shadow-sm flex items-center justify-center gap-2 ${
+                isTestUser
+                  ? "bg-neutral-400 cursor-not-allowed"
+                  : "bg-neutral-900 hover:bg-black active:bg-neutral-800 disabled:opacity-75"
+              }`}
             >
               {savingPassword ? (
                 <>
@@ -574,6 +679,13 @@ export default function ProfilePage() {
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   <span>Updating Password...</span>
+                </>
+              ) : isTestUser ? (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                    <path fillRule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clipRule="evenodd" />
+                  </svg>
+                  <span>Password Changes Disabled for Test User</span>
                 </>
               ) : (
                 <span>Update Password</span>

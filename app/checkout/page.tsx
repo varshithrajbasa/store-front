@@ -26,9 +26,9 @@ export default function CheckoutPage() {
 
   const [saveAddressToProfile, setSaveAddressToProfile] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState("Credit / Debit Card");
-  const [cardNumber, setCardNumber] = useState("•••• •••• •••• 4242");
-  const [cardExpiry, setCardExpiry] = useState("12/28");
-  const [cardCvc, setCardCvc] = useState("•••");
+  const cardNumber = "•••• •••• •••• 4242";
+  const cardExpiry = "12/28";
+  const cardCvc = "•••";
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -92,8 +92,8 @@ export default function CheckoutPage() {
         throw new Error(data.error || "Failed to place order. Please try again.");
       }
 
-      // If user opted to save address to profile, update profile
-      if (saveAddressToProfile && user) {
+      // If user opted to save address to profile, update profile (skipped for test role)
+      if (saveAddressToProfile && user && user.role !== "test") {
         fetch("/api/user/profile", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -320,14 +320,24 @@ export default function CheckoutPage() {
             </div>
 
             <div className="pt-2">
-              <label className="inline-flex items-center gap-2 cursor-pointer text-xs text-neutral-600 hover:text-neutral-900">
+              <label
+                className={`inline-flex items-center gap-2 text-xs ${
+                  user?.role === "test"
+                    ? "text-neutral-400 cursor-not-allowed"
+                    : "cursor-pointer text-neutral-600 hover:text-neutral-900"
+                }`}
+              >
                 <input
                   type="checkbox"
-                  checked={saveAddressToProfile}
+                  disabled={user?.role === "test"}
+                  checked={user?.role === "test" ? false : saveAddressToProfile}
                   onChange={(e) => setSaveAddressToProfile(e.target.checked)}
-                  className="rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-neutral-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
                 />
-                <span>Save this address to my profile as default</span>
+                <span>
+                  Save this address to my profile as default{" "}
+                  {user?.role === "test" && "(Disabled for test user)"}
+                </span>
               </label>
             </div>
           </div>
@@ -360,47 +370,75 @@ export default function CheckoutPage() {
                 />
                 <div className="ml-3 flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-neutral-900">Credit / Debit Card</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-neutral-900">Credit / Debit Card</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200">
+                        Demo Only
+                      </span>
+                    </div>
                     <div className="flex items-center gap-1">
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600">VISA</span>
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600">MC</span>
                       <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-600">AMEX</span>
                     </div>
                   </div>
-                  <p className="text-xs text-neutral-500 mt-0.5">Secure payment via simulated gateway</p>
+                  <p className="text-xs text-neutral-500 mt-0.5">Simulated instant card checkout</p>
 
                   {paymentMethod === "Credit / Debit Card" && (
-                    <div className="mt-4 pt-3 border-t border-neutral-200/60 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      <div className="col-span-2 sm:col-span-3">
-                        <label className="block text-[11px] font-semibold text-neutral-600 mb-1">Card Number</label>
-                        <input
-                          type="text"
-                          value={cardNumber}
-                          onChange={(e) => setCardNumber(e.target.value)}
-                          placeholder="4242 •••• •••• 4242"
-                          className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs font-mono"
-                        />
+                    <div className="mt-4 pt-3 border-t border-neutral-200/60 space-y-3">
+                      {/* Security / Demo Disclaimer */}
+                      <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start gap-2.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-amber-600 shrink-0 mt-0.5">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z" clipRule="evenodd" />
+                        </svg>
+                        <div>
+                          <p className="font-semibold text-amber-950">Card Fields Disabled for Demo Safety</p>
+                          <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
+                            Card inputs are intentionally locked so users never input real payment credentials. This portfolio store <strong>never charges cards</strong> and <strong>never ships items</strong>. You can safely place a simulated order using the prefilled dummy data.
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-[11px] font-semibold text-neutral-600 mb-1">Expires</label>
-                        <input
-                          type="text"
-                          value={cardExpiry}
-                          onChange={(e) => setCardExpiry(e.target.value)}
-                          placeholder="MM/YY"
-                          className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs font-mono"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] font-semibold text-neutral-600 mb-1">CVC</label>
-                        <input
-                          type="password"
-                          value={cardCvc}
-                          onChange={(e) => setCardCvc(e.target.value)}
-                          placeholder="CVC"
-                          maxLength={4}
-                          className="w-full px-3 py-2 bg-white border border-neutral-200 rounded-lg text-xs font-mono"
-                        />
+
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div className="col-span-2 sm:col-span-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-[11px] font-semibold text-neutral-500">
+                              Card Number (Disabled)
+                            </label>
+                            <span className="text-[10px] text-neutral-400 font-mono">Simulated</span>
+                          </div>
+                          <input
+                            type="text"
+                            disabled
+                            value={cardNumber}
+                            placeholder="4242 •••• •••• 4242"
+                            className="w-full px-3 py-2 bg-neutral-100 border border-neutral-200 rounded-lg text-xs font-mono text-neutral-500 cursor-not-allowed"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-neutral-500 mb-1">
+                            Expires (Disabled)
+                          </label>
+                          <input
+                            type="text"
+                            disabled
+                            value={cardExpiry}
+                            placeholder="MM/YY"
+                            className="w-full px-3 py-2 bg-neutral-100 border border-neutral-200 rounded-lg text-xs font-mono text-neutral-500 cursor-not-allowed"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-neutral-500 mb-1">
+                            CVC (Disabled)
+                          </label>
+                          <input
+                            type="password"
+                            disabled
+                            value={cardCvc}
+                            placeholder="CVC"
+                            className="w-full px-3 py-2 bg-neutral-100 border border-neutral-200 rounded-lg text-xs font-mono text-neutral-500 cursor-not-allowed"
+                          />
+                        </div>
                       </div>
                     </div>
                   )}
@@ -532,12 +570,17 @@ export default function CheckoutPage() {
               )}
             </button>
 
-            {/* Guarantee / Security Note */}
-            <div className="flex items-center justify-center gap-1.5 text-[11px] text-neutral-500 pt-1">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clipRule="evenodd" />
-              </svg>
-              <span>256-Bit SSL Encrypted & Protected</span>
+            {/* Demo Security Note */}
+            <div className="space-y-1 pt-1 text-center">
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-neutral-600">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 1.944A11.954 11.954 0 012.166 5C2.056 5.649 2 6.319 2 7c0 5.225 3.34 9.67 8 11.317C14.66 16.67 18 12.225 18 7c0-.682-.057-1.35-.166-2.001A11.954 11.954 0 0110 1.944zM11 14a1 1 0 11-2 0 1 1 0 012 0zm0-7a1 1 0 10-2 0v3a1 1 0 102 0V7z" clipRule="evenodd" />
+                </svg>
+                <span className="font-semibold">Simulated Checkout • 100% Free Demo</span>
+              </div>
+              <p className="text-[10px] text-neutral-400">
+                Zero charges will be billed and no real items will be shipped.
+              </p>
             </div>
           </div>
         </div>

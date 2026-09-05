@@ -816,6 +816,8 @@ function AdminDashboardContent() {
                         className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                           u.role === "admin"
                             ? "bg-purple-100 text-purple-800"
+                            : u.role === "test"
+                            ? "bg-amber-100 text-amber-800 border border-amber-200"
                             : "bg-neutral-100 text-neutral-600"
                         }`}
                       >

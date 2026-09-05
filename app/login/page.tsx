@@ -30,7 +30,13 @@ function LoginForm() {
     setError(null);
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setError("Please enter your email address or username.");
+      return;
+    }
+
+    if (trimmed.includes("@") && !emailRegex.test(trimmed)) {
       setError("Please enter a valid email address.");
       return;
     }
@@ -43,21 +49,21 @@ function LoginForm() {
     setIsSubmitting(true);
 
     try {
-      const res = await login(email.trim(), password);
+      const res = await login(trimmed, password);
 
       if (res.success) {
         setSuccess(true);
         setTimeout(() => {
-          const destination = redirectTarget || (email.toLowerCase().includes("admin") ? "/admin" : "/");
+          const destination = redirectTarget || (trimmed.toLowerCase().includes("admin") ? "/admin" : "/");
           router.push(destination);
           router.refresh();
         }, 600);
       } else {
         // If admin login fails because seed hasn't run, trigger seed & retry once
-        if (email.trim().toLowerCase() === "admin@nextstore.com") {
+        if (trimmed.toLowerCase() === "admin@nextstore.com") {
           try {
             await fetch("/api/seed");
-            const retryRes = await login(email.trim(), password);
+            const retryRes = await login(trimmed, password);
             if (retryRes.success) {
               setSuccess(true);
               setTimeout(() => {
@@ -74,6 +80,32 @@ function LoginForm() {
       }
     } catch {
       setError("An unexpected error occurred. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleTestLogin = async () => {
+    setError(null);
+    setIsSubmitting(true);
+    setEmail("testuser");
+    setPassword("testPassword");
+
+    try {
+      const res = await login("testuser", "testPassword");
+
+      if (res.success) {
+        setSuccess(true);
+        setTimeout(() => {
+          const destination = redirectTarget || "/";
+          router.push(destination);
+          router.refresh();
+        }, 600);
+      } else {
+        setError(res.error || "Failed to sign in as test user. Please ensure the testuser record is created in MongoDB.");
+      }
+    } catch {
+      setError("An unexpected error occurred while logging in as test user.");
     } finally {
       setIsSubmitting(false);
     }
@@ -142,15 +174,15 @@ function LoginForm() {
               htmlFor="login-email"
               className="block text-xs font-semibold uppercase tracking-wider text-neutral-700 mb-1"
             >
-              Email Address
+              Email Address or Username
             </label>
             <input
               id="login-email"
-              type="email"
+              type="text"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="jane@example.com"
+              placeholder="jane@example.com or testuser"
               className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-sm transition"
               disabled={isSubmitting || success}
             />
@@ -183,7 +215,7 @@ function LoginForm() {
             disabled={isSubmitting || success}
             className="w-full mt-2 py-3 px-4 bg-neutral-900 hover:bg-black text-white font-medium rounded-xl transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
           >
-            {isSubmitting ? (
+            {isSubmitting && email !== "testuser" ? (
               <>
                 <svg
                   className="animate-spin h-4 w-4 text-white"
@@ -212,6 +244,71 @@ function LoginForm() {
             )}
           </button>
         </form>
+
+        {/* Divider */}
+        <div className="relative flex py-1 items-center">
+          <div className="flex-grow border-t border-neutral-200" />
+          <span className="flex-shrink mx-4 text-xs uppercase tracking-wider text-neutral-400 font-semibold">
+            Or Demo Account
+          </span>
+          <div className="flex-grow border-t border-neutral-200" />
+        </div>
+
+        {/* Test User Login Quick Action */}
+        <div className="space-y-2">
+          <button
+            type="button"
+            id="login-as-test-btn"
+            onClick={handleTestLogin}
+            disabled={isSubmitting || success}
+            className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-semibold rounded-xl transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+          >
+            {isSubmitting && email === "testuser" ? (
+              <>
+                <svg
+                  className="animate-spin h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                <span>Signing In as Test User...</span>
+              </>
+            ) : (
+              <>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="w-4 h-4 text-white"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span>Login as Test</span>
+              </>
+            )}
+          </button>
+          <p className="text-center text-[11px] text-neutral-500">
+            Instant test user access with read-only profile permissions (role: <span className="font-mono font-medium text-amber-700 bg-amber-50 px-1 py-0.5 rounded">test</span>)
+          </p>
+        </div>
 
         <div className="text-center pt-2 border-t border-neutral-100">
           <p className="text-sm text-neutral-600">

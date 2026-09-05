@@ -37,19 +37,26 @@ export default function Footer() {
 
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900 mb-3">
-              About
+              About Project
             </h4>
-            <p className="text-xs text-neutral-500">
-              Built to explore App Router, Server Components, and API routes in Next.js.
+            <ul className="space-y-2 text-sm text-neutral-600 mb-2">
+              <li>
+                <Link href="/about" id="footer-about-link" className="font-semibold text-blue-600 hover:text-blue-700">
+                  About NextStore →
+                </Link>
+              </li>
+            </ul>
+            <p className="text-xs text-neutral-500 leading-relaxed">
+              Showcase portfolio application demonstrating Next.js, MongoDB, React 19, and full-stack architecture.
             </p>
           </div>
         </div>
 
-        <div className="border-t border-neutral-200 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-400">
-          <p>© {new Date().getFullYear()} NextStore. All rights reserved.</p>
-          <div className="flex gap-4 mt-4 sm:mt-0">
-            <Link href="/privacy" className="hover:text-neutral-600">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-neutral-600">Terms of Service</Link>
+        <div className="border-t border-neutral-200 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-500 gap-2">
+          <p>© {new Date().getFullYear()} NextStore. Portfolio Demo • Never charges users • Never ships items.</p>
+          <div className="flex gap-4">
+            <Link href="/about" className="hover:text-neutral-800">About & Disclaimer</Link>
+            <Link href="/products" className="hover:text-neutral-800">Catalog</Link>
           </div>
         </div>
       </div>

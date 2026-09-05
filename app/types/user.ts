@@ -1,11 +1,12 @@
 import { ObjectId } from "mongodb";
 
-export type UserRole = "user" | "admin";
+export type UserRole = "user" | "admin" | "test";
 
 export interface User {
   _id?: string | ObjectId;
   name: string;
   email: string;
+  username?: string;
   password_hash: string;
   role: UserRole;
   phone?: string;
@@ -21,6 +22,7 @@ export interface UserSafe {
   id: string;
   name: string;
   email: string;
+  username?: string;
   role: UserRole;
   phone?: string;
   address?: string;

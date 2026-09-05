@@ -17,10 +17,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, password } = body;
+    const identifier = (body.email || body.username || "").trim();
+    const password = body.password;
 
     // Validation
-    if (!email || typeof email !== "string" || !isValidEmail(email.trim())) {
+    if (!identifier || typeof identifier !== "string") {
+      return NextResponse.json(
+        { success: false, error: "Please provide your email or username" },
+        { status: 400 }
+      );
+    }
+
+    if (identifier.includes("@") && !isValidEmail(identifier)) {
       return NextResponse.json(
         { success: false, error: "Please provide a valid email address" },
         { status: 400 }
@@ -34,20 +42,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedIdentifier = identifier.toLowerCase();
 
     const client = await clientPromise;
     const db = client.db(DB_NAME);
     const usersCollection = db.collection<User>("users");
 
-    // Find user
+    // Find user by email or username
     const user = await usersCollection.findOne({
-      email: normalizedEmail,
+      $or: [
+        { email: normalizedIdentifier },
+        { username: normalizedIdentifier },
+        { email: identifier },
+        { username: identifier },
+      ],
     });
 
     if (!user) {
       return NextResponse.json(
-        { success: false, error: "Invalid email or password" },
+        { success: false, error: "Invalid credentials. Please check your username/email and password." },
         { status: 401 }
       );
     }
@@ -56,7 +69,7 @@ export async function POST(request: NextRequest) {
     const isPasswordValid = await verifyPassword(password, user.password_hash);
     if (!isPasswordValid) {
       return NextResponse.json(
-        { success: false, error: "Invalid email or password" },
+        { success: false, error: "Invalid credentials. Please check your username/email and password." },
         { status: 401 }
       );
     }
@@ -64,8 +77,9 @@ export async function POST(request: NextRequest) {
     const userId = user._id ? user._id.toString() : "";
     const safeUser: UserSafe = {
       id: userId,
-      name: user.name,
-      email: user.email,
+      name: user.name || user.username || "Test User",
+      email: user.email || user.username || identifier,
+      username: user.username,
       role: user.role || "user",
       createdAt: user.createdAt,
     };
