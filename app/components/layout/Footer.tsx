@@ -37,25 +37,93 @@ export default function Footer() {
 
           <div>
             <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900 mb-3">
-              About Project
+              Developer & Source
             </h4>
-            <ul className="space-y-2 text-sm text-neutral-600 mb-2">
+            <ul className="space-y-2 text-sm text-neutral-600 mb-3">
               <li>
                 <Link href="/about" id="footer-about-link" className="font-semibold text-blue-600 hover:text-blue-700">
-                  About NextStore →
+                  About Architecture →
                 </Link>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/varshithrajbasa/store-front"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-black transition flex items-center gap-1"
+                >
+                  GitHub Repository ↗
+                </a>
+              </li>
+              <li>
+                <a
+                  href="http://varshithrajbasa-prod.web.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-purple-600 transition flex items-center gap-1"
+                >
+                  Developer Portfolio ↗
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.linkedin.com/in/basavarshithraj/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-blue-600 transition flex items-center gap-1"
+                >
+                  LinkedIn Profile ↗
+                </a>
               </li>
             </ul>
             <p className="text-xs text-neutral-500 leading-relaxed">
-              Showcase portfolio application demonstrating Next.js, MongoDB, React 19, and full-stack architecture.
+              Engineered by <span className="font-semibold text-neutral-700">Varshith Raj Basa</span> with Next.js, React 19, and Gemini AI.
             </p>
           </div>
         </div>
 
-        <div className="border-t border-neutral-200 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-500 gap-2">
-          <p>© {new Date().getFullYear()} NextStore. Portfolio Demo • Never charges users • Never ships items.</p>
-          <div className="flex gap-4">
-            <Link href="/about" className="hover:text-neutral-800">About & Disclaimer</Link>
+        <div className="border-t border-neutral-200 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-500 gap-4">
+          <div>
+            <p>© {new Date().getFullYear()} NextStore. Crafted by{" "}
+              <a
+                href="https://www.linkedin.com/in/basavarshithraj/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-neutral-800 hover:text-blue-600 transition"
+              >
+                Varshith Raj Basa
+              </a>
+            </p>
+            <p className="text-[11px] text-neutral-400 mt-0.5">
+              Portfolio Demo • Never charges users • Never ships items.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 text-xs font-medium">
+            <a
+              href="https://github.com/varshithrajbasa/store-front"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-neutral-600 hover:text-black transition"
+            >
+              GitHub
+            </a>
+            <a
+              href="https://www.linkedin.com/in/basavarshithraj/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-neutral-600 hover:text-blue-600 transition"
+            >
+              LinkedIn
+            </a>
+            <a
+              href="http://varshithrajbasa-prod.web.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-neutral-600 hover:text-purple-600 transition"
+            >
+              Portfolio
+            </a>
+            <Link href="/about" className="hover:text-neutral-800">About</Link>
             <Link href="/products" className="hover:text-neutral-800">Catalog</Link>
           </div>
         </div>
